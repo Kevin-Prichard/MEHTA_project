@@ -44,8 +44,8 @@ class RBM:
   def setParams(self, W, a, b):
     ''' Sets RBM parameters.
           Inputs: "W" - (n_v x n_h) matrix of trained couplings
-                   "a" - (n_v x 1) vector of trained visible biases
-                   "b" - (n_h x 1) vector of trained hidden biases
+                  "a" - (n_v x 1) vector of trained visible biases
+                  "b" - (n_h x 1) vector of trained hidden biases
     '''
     self.w_ij, self.a, self.b = W, a, b
     self.trained = True
@@ -117,13 +117,13 @@ class RBM:
                                         l1RegWeight * np.sign(self.w_ij))
         self.w_ij += v
         # no regularization on biases
-        self.a += (trainRate / self.batchSize) * np.sum(batch - pVisRecon, axis=1, keepdims=True)
-        self.b += (trainRate / self.batchSize) * np.sum(pHidData - pHidRecon, axis=1, keepdims=True)
+        # self.a += (trainRate / self.batchSize) * np.sum(batch - pVisRecon, axis=1, keepdims=True)
+        # self.b += (trainRate / self.batchSize) * np.sum(pHidData - pHidRecon, axis=1, keepdims=True)
 
       if allParams == True and i % log_interval == 0:
         w_ijs = np.vstack([w_ijs, [self.w_ij]])
-        aa = np.vstack([aa, [self.a]])
-        bb = np.vstack([bb, [self.b]])
+        # aa = np.vstack([aa, [self.a]])
+        # bb = np.vstack([bb, [self.b]])
         
       if print_debug == True and i % log_interval == 0:
         print("%s " % i, end="")
@@ -134,7 +134,8 @@ class RBM:
     else:
       w_ijs, aa, bb = self.w_ij, self.a, self.b
 
-    self.setParams(w_ijs[-1], aa[-1], bb[-1])
+    # self.setParams(w_ijs[-1], aa[-1], bb[-1])
+    self.setParams(w_ijs[-1], 0, 0)
     self.trained = True
     print("")
     print("Done")

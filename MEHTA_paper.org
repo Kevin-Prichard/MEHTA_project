@@ -24,7 +24,6 @@ Use this to copy stuff bewteen remote/local machines
 ** TODO
 - Intuitively Understand free energy $$\mathcal{F}(x)$$ in
   http://deeplearning.net/tutorial/rbm.html eqs 3 and 4
-** TODO Implement momentum
 
 
 * DBN in python

@@ -4,6 +4,7 @@
 # HINTON - "2010 - Hinton - A Practical Guide to Training Restricted Boltzmann Machines"
 
 import numpy as np
+from tqdm import tqdm
 
 # RBM class
 #
@@ -50,13 +51,20 @@ class RBM:
     self.w_ij, self.a, self.b = W, a, b
     self.trained = True
 
-  def train(self, data, numEpochs, trainRate, biasesTo0=False, allParams=False, print_debug=False,
+  def train(self, data, numEpochs, trainRate, biasesTo0=False, allParams=False,
             l1RegWeight=0, momentum=0, log_interval=10):
     ''' Trains the RBM.
-          Inputs:  "data" - (n_v x m) array of inputs
+          Inputs:  "data"         - (n_v x m) array of inputs
+                   "numEpochs"    - number of epochs to train for
+                   "trainRate"    - training rate
+                   "biasesTo0"    - if true, biases are left out of calculation
+                   "allParams"    - if true, log a, b, and wij parameters every "log_interval"
+                   "l1RegWeight"  - strength of L1 regularization (no reg if 0)
+                   "momentum"     - strength of momentum (no mom if 0)
+                   "log_interval" - log progress every this number of epochs
           Returns: "w_ij" - (n_v x n_h) matrix of trained couplings
-                   "a" - (n_v x 1) vector of trained visible biases
-                   "b" - (n_h x 1) vector of trained hidden biases
+                   "a"    - (n_v x 1) vector of trained visible biases
+                   "b"    - (n_h x 1) vector of trained hidden biases
     '''
     # make sure data is of specified shape
     assert (data.shape[0] == self.n_v)
@@ -66,13 +74,12 @@ class RBM:
     batchesInSample = self.m / self.batchSize
 
     # Init biases
-    if biasesTo0:
+    if biasesTo0 is True:
       self.a, self.b = np.zeros((self.n_v, 1)), np.zeros((self.n_h, 1))
     else:
       # fraction of samples with i'th spin on (HINTON section 8)
       vp = 1. * np.sum(data, axis=1, keepdims=True) / self.m
       self.a, self.b = np.log(vp / (1. - vp)), np.ones((self.n_h, 1))
-
     
     # # initialize weights to gaussian small values (HINTON)
     np_rng = np.random.RandomState(1234)
@@ -86,9 +93,7 @@ class RBM:
 
     # This is the train routine. At the end of this loop, we should have an
     #  array of w_ij matrices -- one for every gradient ascent step.
-    if print_debug == True: print("Epoch: (/" + str(numEpochs) + "): ", end="")
-
-    for i in range(numEpochs):
+    for i in tqdm(range(numEpochs)):
       # randomize sample order for this epoch
       dataThisEpoch = np.copy(data)
       np.random.shuffle(dataThisEpoch.T)
@@ -116,18 +121,15 @@ class RBM:
         v = momentum * v + trainRate * (visHidCorrData - visHidCorrRecon -
                                         l1RegWeight * np.sign(self.w_ij))
         self.w_ij += v
-        # no regularization on biases
-        # self.a += (trainRate / self.batchSize) * np.sum(batch - pVisRecon, axis=1, keepdims=True)
-        # self.b += (trainRate / self.batchSize) * np.sum(pHidData - pHidRecon, axis=1, keepdims=True)
+        if biasesTo0 is False:
+          self.a += (trainRate / self.batchSize) * np.sum(batch - pVisRecon, axis=1, keepdims=True)
+          self.b += (trainRate / self.batchSize) * np.sum(pHidData - pHidRecon, axis=1, keepdims=True)
 
       if allParams == True and i % log_interval == 0:
         w_ijs = np.vstack([w_ijs, [self.w_ij]])
-        # aa = np.vstack([aa, [self.a]])
-        # bb = np.vstack([bb, [self.b]])
+        aa = np.vstack([aa, [self.a]])
+        bb = np.vstack([bb, [self.b]])
         
-      if print_debug == True and i % log_interval == 0:
-        print("%s " % i, end="")
-
     # kill duplicate first element
     if allParams == True:
       w_ijs, aa, bb = w_ijs[1:], aa[1:], bb[1:]
@@ -135,13 +137,10 @@ class RBM:
       w_ijs, aa, bb = self.w_ij, self.a, self.b
 
     # self.setParams(w_ijs[-1], aa[-1], bb[-1])
-    self.setParams(w_ijs[-1], 0, 0)
+    # self.setParams(w_ijs[-1], 0, 0)
     self.trained = True
-    print("")
-    print("Done")
     return w_ijs, aa, bb
 
-      
   def vToh(self, vis):
     assert (self.trained == True)
     assert (vis.shape[0] == self.n_v)
